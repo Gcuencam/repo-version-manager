@@ -1,0 +1,6 @@
+{
+  "monorepo": false,
+  "mainBranch": "main",
+  "developBranch": "development",
+  "services": []
+}
