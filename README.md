@@ -1,5 +1,11 @@
 # Repo Version Manager (`rpvm`)
 
+[![CI](https://img.shields.io/github/actions/workflow/status/Gcuencam/repo-version-manager/ci.yml?branch=main&label=tests)](https://github.com/Gcuencam/repo-version-manager/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/repo-version-manager)](https://www.npmjs.com/package/repo-version-manager)
+[![npm downloads](https://img.shields.io/npm/dm/repo-version-manager)](https://www.npmjs.com/package/repo-version-manager)
+[![install size](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpackagephobia.com%2Fv2%2Fapi.json%3Fp%3Drepo-version-manager&query=%24.install.pretty&label=install%20size)](https://packagephobia.com/result?p=repo-version-manager)
+[![license](https://img.shields.io/github/license/Gcuencam/repo-version-manager)](./LICENSE)
+
 Interactive CLI to manage the **global version** of a repository — and, in monorepos, the **individual version** of each service it contains — with git integration (branches, tags, rebase).
 
 > `rpvm` creates commits and tags, but it **never pushes**. Publishing the release is always up to the developer — the CLI prints the exact push command to run.

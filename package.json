@@ -14,11 +14,11 @@
   "author": "Gabriel Cuenca <gcuencamoncin@gmail.com> (https://github.com/Gcuencam)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Gcuencam/monorepo-version-manager.git"
+    "url": "git+https://github.com/Gcuencam/repo-version-manager.git"
   },
-  "homepage": "https://github.com/Gcuencam/monorepo-version-manager#readme",
+  "homepage": "https://github.com/Gcuencam/repo-version-manager#readme",
   "bugs": {
-    "url": "https://github.com/Gcuencam/monorepo-version-manager/issues"
+    "url": "https://github.com/Gcuencam/repo-version-manager/issues"
   },
   "type": "module",
   "bin": {
