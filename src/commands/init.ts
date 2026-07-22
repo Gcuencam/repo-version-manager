@@ -13,6 +13,13 @@ import {
   writeConfig,
   writeVersionFile,
 } from '../core/config.js'
+import {
+  type ExpoTargets,
+  ROOT_SERVICE,
+  detectExpoProject,
+  isExpoApp,
+  readNativeState,
+} from '../core/expo.js'
 import { commitFiles, createTag, isGitRepo, localBranches, tagExists } from '../core/git.js'
 import { listCandidateDirs } from '../core/services.js'
 import { isValidVersion } from '../core/versions.js'
@@ -122,6 +129,45 @@ export async function initCommand(): Promise<void> {
     })
   ).trim()
 
+  const expo: Record<string, ExpoTargets> = {}
+  const expoCandidates = monorepo
+    ? services.map((name) => ({ key: name, dir: path.join(root, name), label: pc.cyan(name) }))
+    : [{ key: ROOT_SERVICE, dir: root, label: 'this repository' }]
+  for (const { key, dir, label } of expoCandidates) {
+    if (!isExpoApp(dir)) continue
+    const project = detectExpoProject(dir)
+    if (!project.hasIos && !project.hasAndroid) continue
+    const platforms = [project.hasIos ? 'ios' : null, project.hasAndroid ? 'android' : null]
+      .filter((x): x is string => x !== null)
+      .join(' + ')
+    const manage = must(
+      await p.confirm({
+        message: `${label} is an Expo app with native folders (${platforms}). Manage its native versions on release?`,
+        initialValue: true,
+      })
+    )
+    if (!manage) continue
+    expo[key] = {
+      ios: project.hasIos,
+      android: project.hasAndroid,
+      syncAppJson: project.appJsonPath !== null,
+    }
+    const configured = key === ROOT_SERVICE ? globalVersion : serviceVersions.get(key)
+    const state = readNativeState(project)
+    const mismatched = [
+      state.androidVersionName && state.androidVersionName !== configured
+        ? `versionName ${state.androidVersionName} (build.gradle)`
+        : null,
+      state.iosVersion && state.iosVersion !== configured ? `iOS version ${state.iosVersion}` : null,
+    ].filter((x): x is string => x !== null)
+    if (mismatched.length > 0) {
+      p.log.warn(
+        `Native versions of ${label} differ from v${configured}: ${mismatched.join(', ')}. ` +
+          'They will be aligned on the next release.'
+      )
+    }
+  }
+
   let mainBranch = 'main'
   let developBranch = 'develop'
   const repo = await isGitRepo(root)
@@ -145,6 +191,7 @@ export async function initCommand(): Promise<void> {
     mainBranch,
     developBranch,
     services: [...services].sort((a, b) => a.localeCompare(b)),
+    ...(Object.keys(expo).length > 0 ? { expo } : {}),
   }
   writeConfig(root, config)
   writeVersionFile(root, globalVersion)

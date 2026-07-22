@@ -42,6 +42,7 @@ Run it from the repository root. It asks you, with sensible defaults auto-detect
 - Whether the repo is a **monorepo with services** (detected from your folder structure).
 - In monorepo mode, **which first-level folders are services** (folders with a `package.json` come preselected) and each service's initial version.
 - The **global version** (defaults to the root `package.json` version when available).
+- For services that are **Expo/React Native apps with committed `ios/`/`android/` folders** (or the repo root itself, in single-repo mode), whether `rpvm` should also manage their native versions on every release (see [Expo / React Native apps](#expo--react-native-apps)).
 - The **main branch** (`main`/`master`) and the **development branch** (`develop`/`development`).
 
 It then writes the config and version files (see [Generated files](#generated-files)), updates the `package.json` versions, commits everything (`🔖 RPVM init vX.Y.Z`) and, optionally, creates the initial `vX.Y.Z` tag.
@@ -60,7 +61,7 @@ The everyday command — the one recorded in the demo above. It checks that the 
 ├─────────────────────────────╯
 ```
 
-On confirmation it writes the version files, creates the release commit and the annotated tag, and prints the exact push command for when you're ready. Add `--dry-run` to walk the whole flow and see the list of actions without modifying anything.
+On confirmation it writes the version files — including the native files of managed Expo apps — creates the release commit and the annotated tag, and prints the exact push command for when you're ready. Add `--dry-run` to walk the whole flow and see the list of actions without modifying anything.
 
 ### `rpvm status` — where am I?
 
@@ -78,6 +79,8 @@ Shows the global version (and each service's version in monorepo mode) and warns
 └  main: main · develop: develop · current: develop
 ```
 
+For managed Expo apps it also shows one line per native target (`android`, `ios`, `app.json`) with its version, build number and sync state.
+
 ## How a release works
 
 ```mermaid
@@ -89,7 +92,7 @@ flowchart TD
     bump --> services["Monorepo: choose each service's bump<br/>(never above the global one)"]
     services --> summary{"Summary — confirm?"}
     summary -- no --> abort
-    summary -- yes --> write["Write .version and package.json files"]
+    summary -- yes --> write["Write .version, package.json<br/>and native (Expo) version files"]
     write --> tag["Commit 🔖 RPVM release vX.Y.Z<br/>+ annotated tag vX.Y.Z"]
     tag --> push(["You push when ready —<br/>rpvm prints the exact command"])
 ```
@@ -101,11 +104,42 @@ The rules behind the flow:
 - Git tags (`vX.Y.Z`) track the global version.
 - On the development branch the suggested push uses `--force-with-lease` (the branch was just rebased); on main it never suggests forcing.
 
+## Expo / React Native apps
+
+For Expo apps whose native folders are committed (ejected / `expo prebuild`), bumping the version means touching several native files. When native management is enabled for a service during `rpvm init`, every release that bumps that service also updates:
+
+| Platform | File | Fields |
+|---|---|---|
+| Android | `android/app/build.gradle` | `versionName`, `versionCode` |
+| iOS | `ios/<App>.xcodeproj/project.pbxproj` | `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` (all build configurations) |
+| iOS | `ios/<App>/Info.plist` | `CFBundleShortVersionString`, `CFBundleVersion` — only when the values are literals; entries using `$(MARKETING_VERSION)`-style variables are left to the pbxproj |
+| Expo | `app.json` | `expo.version`, plus `expo.ios.buildNumber` / `expo.android.versionCode` when the project already declares them |
+
+How it works:
+
+- The semver version written to the native files is the **service version** (or the global version in single-repo mode).
+- **Build numbers** (`versionCode`, `CFBundleVersion`/`CURRENT_PROJECT_VERSION`) are not semver: `rpvm` uses a single shared build number per app and **auto-increments it on every release** — one past the highest build number found on any platform, so store uploads stay monotonic.
+- All edits are surgical text replacements: the rest of the file (formatting, comments, other settings) is untouched.
+- If a value cannot be updated safely (`versionCode` computed from a Gradle variable, config in `app.config.js`/`ts` instead of `app.json`), `rpvm` warns and asks you to update it manually instead of guessing.
+- `--dry-run` lists the exact native files that would be written.
+
+The selection is stored in `.rpvmrc.json` under the `expo` key (`"."` refers to the repository root):
+
+```json
+{
+  "monorepo": true,
+  "services": ["api", "mobile"],
+  "expo": {
+    "mobile": { "ios": true, "android": true, "syncAppJson": true }
+  }
+}
+```
+
 ## Generated files
 
 | File | Where | Content |
 |---|---|---|
-| `.rpvmrc.json` | root | mode (monorepo or not), branches and service list |
+| `.rpvmrc.json` | root | mode (monorepo or not), branches, service list and Expo native targets |
 | `.version` | root | global repository version |
 | `.version` | each service (monorepo mode) | service version — the **source of truth**, `package.json` follows it |
 

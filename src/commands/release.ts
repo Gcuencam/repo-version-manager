@@ -12,6 +12,16 @@ import {
   writeVersionFile,
 } from '../core/config.js'
 import {
+  type ExpoProject,
+  type ExpoTargets,
+  ROOT_SERVICE,
+  detectExpoProject,
+  expoTargetsFromConfig,
+  nextBuildNumber,
+  readNativeState,
+  updateNativeVersions,
+} from '../core/expo.js'
+import {
   commitFiles,
   createTag,
   currentBranch,
@@ -30,6 +40,27 @@ interface ServiceDecision {
   name: string
   current: string
   next: string
+}
+
+interface NativeBump {
+  label: string
+  project: ExpoProject
+  targets: ExpoTargets
+  version: string
+  currentVersion: string | null
+  currentBuild: number | null
+  buildNumber: number
+}
+
+/** Files a native bump would touch, relative to the repo root (for the dry-run report). */
+function nativeBumpFiles(root: string, bump: NativeBump): string[] {
+  const files: (string | null)[] = [
+    bump.targets.android ? bump.project.buildGradlePath : null,
+    bump.targets.ios ? bump.project.pbxprojPath : null,
+    bump.targets.ios ? bump.project.infoPlistPath : null,
+    bump.targets.syncAppJson ? bump.project.appJsonPath : null,
+  ]
+  return files.filter((f): f is string => f !== null).map((f) => path.relative(root, f))
 }
 
 export async function releaseCommand(options: { dryRun?: boolean }): Promise<void> {
@@ -141,10 +172,35 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     decisions.push({ name, current, next: bump === 'none' ? current : applyBump(current, bump) })
   }
 
+  const nativeBumps: NativeBump[] = []
+  for (const [key, targets] of Object.entries(expoTargetsFromConfig(config))) {
+    const isRoot = key === ROOT_SERVICE
+    const decision = isRoot ? null : decisions.find((d) => d.name === key)
+    // The global version always bumps; a service's native files only move with the service.
+    if (!isRoot && (!decision || decision.next === decision.current)) continue
+    const project = detectExpoProject(isRoot ? root : path.join(root, key))
+    const state = readNativeState(project)
+    const currentBuild = Math.max(state.iosBuildNumber ?? 0, state.androidVersionCode ?? 0)
+    nativeBumps.push({
+      label: isRoot ? 'native app' : `${key} (native)`,
+      project,
+      targets,
+      version: isRoot ? globalNext : decision!.next,
+      currentVersion: state.androidVersionName ?? state.iosVersion,
+      currentBuild: currentBuild > 0 ? currentBuild : null,
+      buildNumber: nextBuildNumber(state),
+    })
+  }
+
   p.note(
     summaryTable([
       { name: 'global', from: globalCurrent, to: globalNext },
       ...decisions.map((d) => ({ name: d.name, from: d.current, to: d.next })),
+      ...nativeBumps.map((b) => ({
+        name: b.label,
+        from: `${b.currentVersion ?? '?'} (build ${b.currentBuild ?? '?'})`,
+        to: `${b.version} (build ${b.buildNumber})`,
+      })),
     ]),
     `Release ${tag} summary`
   )
@@ -175,6 +231,11 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
         const withPkg = hasPackageJson(path.join(root, d.name)) ? ' and package.json' : ''
         return `write ${d.name}/${VERSION_FILE}${withPkg} → ${d.next}`
       }),
+      ...nativeBumps.map((b) => {
+        const files = nativeBumpFiles(root, b)
+        if (files.length === 0) return `${b.label}: no native files found, nothing to write`
+        return `write ${files.join(', ')} → ${b.version} (build ${b.buildNumber})`
+      }),
     ]
     if (repo) {
       actions.push(`git commit "🔖 RPVM release ${tag}" + annotated tag ${tag}`)
@@ -191,6 +252,11 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     const dir = path.join(root, d.name)
     writeVersionFile(dir, d.next)
     if (hasPackageJson(dir)) updatePackageVersion(dir, d.next)
+  }
+  for (const b of nativeBumps) {
+    const result = updateNativeVersions(root, b.project, b.targets, b.version, b.buildNumber)
+    filesToCommit.push(...result.changed)
+    for (const warning of result.warnings) p.log.warn(`${b.label}: ${warning}`)
   }
   p.log.success('Version files updated.')
 
