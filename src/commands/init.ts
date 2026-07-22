@@ -173,7 +173,7 @@ export async function initCommand(): Promise<void> {
       if (hasPackageJson(path.join(root, name))) filesToCommit.push(path.join(name, 'package.json'))
     }
     try {
-      await commitFiles(root, filesToCommit, `chore(rvm): init ${tag}`)
+      await commitFiles(root, filesToCommit, `🔖 RVM init ${tag}`)
       p.log.success('Configuration files committed.')
     } catch (error) {
       p.log.warn(
