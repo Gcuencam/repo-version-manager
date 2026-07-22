@@ -22,7 +22,7 @@ Interactively sets up the repository from its root:
 2. **Monorepo**: mark which first-level folders are services (folders with a `package.json` come preselected) and review/edit each service's version. **Single repo**: this step is skipped — there are no services, only the global version.
 3. Review/edit the global version (defaults to the root `package.json` version when available).
 4. Confirm the main branch (`main`/`master`) and the development branch (`develop`/`development`).
-5. Generates `.rvmrc.json`, a hidden `.version` file at the root (and in each service in monorepo mode), updates the `package.json` files — including the root one, if present — and, optionally, creates the initial `vX.Y.Z` tag.
+5. Generates `.rvmrc.json`, a hidden `.version` file at the root (and in each service in monorepo mode), updates the `package.json` files — including the root one, if present — commits those files (`chore(rvm): init vX.Y.Z`) and, optionally, creates the initial `vX.Y.Z` tag pointing at that commit.
 
 ### `rvm release`
 

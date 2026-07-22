@@ -3,6 +3,7 @@ import * as p from '@clack/prompts'
 import pc from 'picocolors'
 import {
   CONFIG_FILE,
+  VERSION_FILE,
   type RvmConfig,
   hasPackageJson,
   readConfig,
@@ -12,7 +13,7 @@ import {
   writeConfig,
   writeVersionFile,
 } from '../core/config.js'
-import { createTag, isGitRepo, localBranches, tagExists } from '../core/git.js'
+import { commitFiles, createTag, isGitRepo, localBranches, tagExists } from '../core/git.js'
 import { listCandidateDirs } from '../core/services.js'
 import { isValidVersion } from '../core/versions.js'
 import { fail, must, semverHint, summaryTable } from '../ui.js'
@@ -164,6 +165,22 @@ export async function initCommand(): Promise<void> {
 
   if (repo) {
     const tag = `v${globalVersion}`
+
+    const filesToCommit = [CONFIG_FILE, VERSION_FILE]
+    if (hasPackageJson(root)) filesToCommit.push('package.json')
+    for (const name of serviceVersions.keys()) {
+      filesToCommit.push(path.join(name, VERSION_FILE))
+      if (hasPackageJson(path.join(root, name))) filesToCommit.push(path.join(name, 'package.json'))
+    }
+    try {
+      await commitFiles(root, filesToCommit, `chore(rvm): init ${tag}`)
+      p.log.success('Configuration files committed.')
+    } catch (error) {
+      p.log.warn(
+        `Could not commit the configuration files: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+
     if (!(await tagExists(root, tag))) {
       const wantTag = must(
         await p.confirm({ message: `Create the initial tag ${tag}?`, initialValue: true })
