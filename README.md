@@ -6,45 +6,126 @@
 [![install size](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fpackagephobia.com%2Fv2%2Fapi.json%3Fp%3Drepo-version-manager&query=%24.install.pretty&label=install%20size)](https://packagephobia.com/result?p=repo-version-manager)
 [![license](https://img.shields.io/github/license/Gcuencam/repo-version-manager)](./LICENSE)
 
-Interactive CLI to manage the **global version** of a repository — and, in monorepos, the **individual version** of each service it contains — with git integration (branches, tags, rebase).
+Interactive CLI to version a repository — or every service inside a monorepo — from your terminal, with git integration (branches, tags, rebase). You stay in control: **`rpvm` never pushes**.
 
-> `rpvm` creates commits and tags, but it **never pushes**. Publishing the release is always up to the developer — the CLI prints the exact push command to run.
+## Why rpvm?
 
-## Installation
+Tools like `semantic-release` or `changesets` automate versioning from commit conventions and CI pipelines. `rpvm` takes the opposite approach: a short interactive session where **you** decide every bump, review a summary of exactly what will happen, and nothing leaves your machine until you push it yourself.
+
+- 🎛️ **Interactive and explicit** — pick every bump from a prompt; no commit-message conventions to learn.
+- 🧩 **Monorepo-aware** — one global version for the repo, plus an individual version per service.
+- 🚦 **Guard rails** — a service never bumps above the global bump, and from the main branch only `patch` (hotfix) releases are allowed.
+- 🔄 **Git taken care of** — syncs with `origin` (fetch + rebase), then creates the release commit and the annotated tag for you.
+- 🙅 **Never pushes** — commits and tags stay local; the CLI prints the exact push command for you to run.
+- 🧪 **Dry run** — `rpvm release --dry-run` walks the whole flow without touching a single file.
+
+## Quick start
 
 ```sh
 npm install -g repo-version-manager
+
+cd your-repo
+rpvm init      # one-time setup: mode, services, versions and branches
+rpvm release   # every time you want to cut a new version
 ```
 
-The package installs a single binary: `rpvm`.
+Requires Node.js ≥ 18.19. The package installs a single binary: `rpvm`.
 
-## Usage
+## Commands
 
-### `rpvm init`
+### `rpvm init` — set up the repository (once)
 
-Interactively sets up the repository from its root:
+Run it from the repository root. It asks you, with sensible defaults auto-detected from your project:
 
-1. Answer whether the repository is a **monorepo with services** (the default is auto-detected from your folder structure).
-2. **Monorepo**: mark which first-level folders are services (folders with a `package.json` come preselected) and review/edit each service's version. **Single repo**: this step is skipped — there are no services, only the global version.
-3. Review/edit the global version (defaults to the root `package.json` version when available).
-4. Confirm the main branch (`main`/`master`) and the development branch (`develop`/`development`).
-5. Generates `.rpvmrc.json`, a hidden `.version` file at the root (and in each service in monorepo mode), updates the `package.json` files — including the root one, if present — commits those files (`🔖 RPVM init vX.Y.Z`) and, optionally, creates the initial `vX.Y.Z` tag pointing at that commit.
+- Whether the repo is a **monorepo with services** (detected from your folder structure).
+- In monorepo mode, **which first-level folders are services** (folders with a `package.json` come preselected) and each service's initial version.
+- The **global version** (defaults to the root `package.json` version when available).
+- The **main branch** (`main`/`master`) and the **development branch** (`develop`/`development`).
 
-### `rpvm release`
+It then writes the config and version files (see [Generated files](#generated-files)), updates the `package.json` versions, commits everything (`🔖 RPVM init vX.Y.Z`) and, optionally, creates the initial `vX.Y.Z` tag.
 
-Generates a new version:
+### `rpvm release` — cut a new version
 
-1. Checks that the working tree is clean and that you are on the main or the development branch.
-2. Syncs with `origin`: on the development branch it rebases onto `origin/<develop>` and `origin/<main>` (main hotfixes get incorporated); on main it rebases onto `origin/<main>`.
-3. You pick the global bump: `patch`, `minor` or `major`. **From the main branch only `patch` is allowed** (hotfix).
-4. In monorepo mode, for each service you decide whether it bumps and how much: never above the global bump (if the global bump is `minor`, a service can be `minor`, `patch` or stay unchanged). In single-repo mode there is nothing else to decide.
-5. Shows a summary and, on confirmation: writes the `.version` files and the affected `package.json` files (the root one included, when present), creates the `🔖 RPVM release vX.Y.Z` commit and the annotated `vX.Y.Z` tag. It then prints the suggested push command (`git push --force-with-lease` on the development branch after the rebase; never force on main) — but does not run it.
+The everyday command. It checks that the working tree is clean and that you are on the main or the development branch, rebases onto `origin`, and then walks you through the bumps:
 
-With `--dry-run` it walks through the whole flow without touching files or git.
+```
+┌   rpvm release
+│
+◇  Branch up to date with origin.
+│
+◇  Global release type (current version: 1.2.3)
+│  minor (1.2.3 → 1.3.0)
+│
+◇  Bump api? (current: 0.9.1)
+│  minor (0.9.1 → 0.10.0)
+│
+◇  Bump web? (current: 2.1.0)
+│  no bump (stays at 2.1.0)
+│
+◇  Release v1.3.0 summary ────╮
+│                             │
+│  global  1.2.3 → 1.3.0      │
+│  api     0.9.1 → 0.10.0     │
+│  web     2.1.0 (unchanged)  │
+│                             │
+├─────────────────────────────╯
+│
+◇  Generate release v1.3.0?
+│  Yes
+│
+◇  Version files updated.
+│
+◇  Commit and tag v1.3.0 created.
+│
+◇  Next step ──────────────────────────────────────────────────╮
+│                                                              │
+│  rpvm does not push. When you want to publish the release:   │
+│    git push --force-with-lease origin develop                │
+│    git push origin v1.3.0                                    │
+│                                                              │
+├──────────────────────────────────────────────────────────────╯
+```
 
-### `rpvm status`
+Nothing is written until you confirm the summary. Add `--dry-run` to walk the whole flow and see the list of actions without modifying anything.
 
-Shows the global version (and each service's version in monorepo mode), and warns when a `package.json` is out of sync with its `.version` file (`.version` is the source of truth).
+### `rpvm status` — where am I?
+
+Shows the global version (and each service's version in monorepo mode) and warns when a `package.json` is out of sync with its `.version` file:
+
+```
+┌   rpvm status
+│
+◇  Versions ───────────────────────────────╮
+│                                          │
+│  global  v1.2.3  ✔ package.json in sync  │
+│                                          │
+├──────────────────────────────────────────╯
+│
+└  main: main · develop: develop · current: develop
+```
+
+## How a release works
+
+```mermaid
+flowchart TD
+    start(["rpvm release"]) --> checks{"Working tree clean?<br/>On main or develop?"}
+    checks -- no --> abort(["Abort — nothing modified"])
+    checks -- yes --> sync["Sync with origin (fetch + rebase)<br/>develop: onto origin/develop, then origin/main<br/>main: onto origin/main"]
+    sync --> bump["Choose the global bump<br/>(from main: patch only)"]
+    bump --> services["Monorepo: choose each service's bump<br/>(never above the global one)"]
+    services --> summary{"Summary — confirm?"}
+    summary -- no --> abort
+    summary -- yes --> write["Write .version and package.json files"]
+    write --> tag["Commit 🔖 RPVM release vX.Y.Z<br/>+ annotated tag vX.Y.Z"]
+    tag --> push(["You push when ready —<br/>rpvm prints the exact command"])
+```
+
+The rules behind the flow:
+
+- A service bump never exceeds the global one (`patch` < `minor` < `major`); a service may also stay unchanged.
+- From the main branch only `patch` releases are generated — features ship through the development branch; main is for hotfixes.
+- Git tags (`vX.Y.Z`) track the global version.
+- On the development branch the suggested push uses `--force-with-lease` (the branch was just rebased); on main it never suggests forcing.
 
 ## Generated files
 
@@ -52,25 +133,39 @@ Shows the global version (and each service's version in monorepo mode), and warn
 |---|---|---|
 | `.rpvmrc.json` | root | mode (monorepo or not), branches and service list |
 | `.version` | root | global repository version |
-| `.version` | each service (monorepo mode) | service version |
+| `.version` | each service (monorepo mode) | service version — the **source of truth**, `package.json` follows it |
 
-## Rules
+## FAQ
 
-- A service bump never exceeds the global one: `patch` < `minor` < `major`; a service may stay unchanged.
-- From the main branch only `patch` releases are generated.
-- Git tags (`vX.Y.Z`) track the global version.
-- `rpvm` never pushes: commits and tags stay local until you push them.
-- Without a git repository, `rpvm` only manages the version files.
+**The rebase hit conflicts. Is my repo in a weird state?**
+No. `rpvm` aborts the rebase and exits without modifying anything. Resolve the conflicts manually (`git rebase origin/<branch>`) and run `rpvm release` again.
+
+**`rpvm status` warns that a `package.json` is out of sync.**
+`.version` is the source of truth. Someone edited a `package.json` version by hand — set it back to the `.version` value (the next release will rewrite it anyway).
+
+**Can I use it without a remote? Without git at all?**
+Yes. With no `origin` remote, the sync step is skipped (you'll see a warning). With no git repository, `rpvm` only manages the version files — no commits, no tags.
+
+**I cut a release locally and regret it. How do I undo it?**
+As long as you haven't pushed: `git tag -d vX.Y.Z && git reset --hard HEAD~1`. That's the point of never pushing automatically.
+
+**Why only `patch` from main?**
+Main represents what's in production. New features go through the development branch and reach main via a regular release; anything released directly from main is by definition a hotfix.
 
 ## Development
 
 ```sh
+git clone https://github.com/Gcuencam/repo-version-manager.git
+cd repo-version-manager
 npm install
+npm run dev        # tsup in watch mode
 npm run typecheck
 npm test
 npm run build
-npm link   # to try `rpvm` locally
+npm link           # try `rpvm` locally
 ```
+
+Found a bug or have an idea? [Open an issue](https://github.com/Gcuencam/repo-version-manager/issues).
 
 ## License
 
