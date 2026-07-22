@@ -1,6 +1,6 @@
 {
   "name": "repo-version-manager",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Interactive CLI to manage the global version of a repo or monorepo and the individual version of each of its services, with git integration (branches, tags, rebase)",
   "keywords": [
     "repo",
