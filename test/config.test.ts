@@ -26,8 +26,25 @@ describe('config', () => {
     expect(readConfig(dir)).toBeNull()
   })
 
-  it('writes and reads the config back', () => {
-    const config = { mainBranch: 'main', developBranch: 'develop', services: ['api', 'web'] }
+  it('writes and reads a monorepo config back to .rvmrc.json', () => {
+    const config = {
+      monorepo: true,
+      mainBranch: 'main',
+      developBranch: 'develop',
+      services: ['api', 'web'],
+    }
+    writeConfig(dir, config)
+    expect(fs.existsSync(path.join(dir, '.rvmrc.json'))).toBe(true)
+    expect(readConfig(dir)).toEqual(config)
+  })
+
+  it('writes and reads a single-repo config without services', () => {
+    const config = {
+      monorepo: false,
+      mainBranch: 'master',
+      developBranch: 'development',
+      services: [],
+    }
     writeConfig(dir, config)
     expect(readConfig(dir)).toEqual(config)
   })

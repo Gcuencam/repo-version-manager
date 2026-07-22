@@ -11,6 +11,15 @@ import {
 import { currentBranch, isGitRepo } from '../core/git.js'
 import { fail } from '../ui.js'
 
+function versionDetail(fileVersion: string | null, pkgVersion: string | null): string {
+  if (!fileVersion) return pc.red('missing .version — run rvm init')
+  if (pkgVersion && pkgVersion !== fileVersion) {
+    return `${pc.green(`v${fileVersion}`)}  ${pc.yellow(`⚠ package.json out of sync (v${pkgVersion})`)}`
+  }
+  if (pkgVersion) return `${pc.green(`v${fileVersion}`)}  ${pc.dim('✔ package.json in sync')}`
+  return `${pc.green(`v${fileVersion}`)}  ${pc.dim('no package.json')}`
+}
+
 export async function statusCommand(): Promise<void> {
   const root = process.cwd()
   p.intro(pc.bgBlue(pc.black(' rvm status ')))
@@ -21,27 +30,19 @@ export async function statusCommand(): Promise<void> {
   const nameWidth = Math.max(6, ...config.services.map((s) => s.length))
   const lines: string[] = []
 
-  const globalVersion = readVersionFile(root)
+  const rootPkgVersion = hasPackageJson(root) ? readPackageVersion(root) : null
   lines.push(
-    `${pc.bold('global'.padEnd(nameWidth))}  ${globalVersion ? pc.green(`v${globalVersion}`) : pc.red('missing .version')}`
+    `${pc.bold('global'.padEnd(nameWidth))}  ${versionDetail(readVersionFile(root), rootPkgVersion)}`
   )
 
-  for (const name of config.services) {
-    const dir = path.join(root, name)
-    const fileVersion = readVersionFile(dir)
-    const pkgVersion = hasPackageJson(dir) ? readPackageVersion(dir) : null
-
-    let detail: string
-    if (!fileVersion) {
-      detail = pc.red('missing .version — run rvm init')
-    } else if (pkgVersion && pkgVersion !== fileVersion) {
-      detail = `${pc.green(`v${fileVersion}`)}  ${pc.yellow(`⚠ package.json out of sync (v${pkgVersion})`)}`
-    } else if (pkgVersion) {
-      detail = `${pc.green(`v${fileVersion}`)}  ${pc.dim('✔ package.json in sync')}`
-    } else {
-      detail = `${pc.green(`v${fileVersion}`)}  ${pc.dim('no package.json')}`
+  if (config.monorepo) {
+    for (const name of config.services) {
+      const dir = path.join(root, name)
+      const pkgVersion = hasPackageJson(dir) ? readPackageVersion(dir) : null
+      lines.push(
+        `${pc.cyan(name.padEnd(nameWidth))}  ${versionDetail(readVersionFile(dir), pkgVersion)}`
+      )
     }
-    lines.push(`${pc.cyan(name.padEnd(nameWidth))}  ${detail}`)
   }
 
   p.note(lines.join('\n'), 'Versions')

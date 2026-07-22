@@ -5,6 +5,7 @@ export const CONFIG_FILE = '.rvmrc.json'
 export const VERSION_FILE = '.version'
 
 export interface RvmConfig {
+  monorepo: boolean
   mainBranch: string
   developBranch: string
   services: string[]

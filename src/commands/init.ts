@@ -70,24 +70,34 @@ export async function initCommand(): Promise<void> {
   }
 
   const candidates = listCandidateDirs(root)
-  if (candidates.length === 0) {
-    fail('There are no first-level folders in this directory: no services to configure.')
-  }
-
-  const services = must(
-    await p.multiselect({
-      message: 'Which folders are services of the monorepo? (space to select, enter to confirm)',
-      options: candidates.map((c) => ({
-        value: c.name,
-        label: c.name,
-        hint: c.hasPackageJson
-          ? `package.json · ${c.version ? `v${c.version}` : 'no version'}`
-          : 'no package.json',
-      })),
-      initialValues: candidates.filter((c) => c.hasPackageJson).map((c) => c.name),
-      required: true,
+  const looksMonorepo = candidates.some((c) => c.hasPackageJson)
+  const monorepo = must(
+    await p.confirm({
+      message: 'Is this repository a monorepo with services?',
+      initialValue: looksMonorepo,
     })
   )
+
+  let services: string[] = []
+  if (monorepo) {
+    if (candidates.length === 0) {
+      fail('There are no first-level folders in this directory: no services to configure.')
+    }
+    services = must(
+      await p.multiselect({
+        message: 'Which folders are services of the monorepo? (space to select, enter to confirm)',
+        options: candidates.map((c) => ({
+          value: c.name,
+          label: c.name,
+          hint: c.hasPackageJson
+            ? `package.json · ${c.version ? `v${c.version}` : 'no version'}`
+            : 'no package.json',
+        })),
+        initialValues: candidates.filter((c) => c.hasPackageJson).map((c) => c.name),
+        required: true,
+      })
+    )
+  }
 
   const serviceVersions = new Map<string, string>()
   for (const name of services) {
@@ -105,8 +115,8 @@ export async function initCommand(): Promise<void> {
 
   const globalVersion = must(
     await p.text({
-      message: 'Global monorepo version',
-      initialValue: readVersionFile(root) ?? '0.1.0',
+      message: 'Global version of the repository',
+      initialValue: readVersionFile(root) ?? readPackageVersion(root) ?? '0.1.0',
       validate: validateSemver,
     })
   ).trim()
@@ -130,12 +140,14 @@ export async function initCommand(): Promise<void> {
   }
 
   const config: RvmConfig = {
+    monorepo,
     mainBranch,
     developBranch,
     services: [...services].sort((a, b) => a.localeCompare(b)),
   }
   writeConfig(root, config)
   writeVersionFile(root, globalVersion)
+  if (hasPackageJson(root)) updatePackageVersion(root, globalVersion)
   for (const [name, version] of serviceVersions) {
     const dir = path.join(root, name)
     writeVersionFile(dir, version)

@@ -160,7 +160,9 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
   }
 
   const changed = decisions.filter((d) => d.next !== d.current)
+  const rootHasPkg = hasPackageJson(root)
   const filesToCommit = [VERSION_FILE]
+  if (rootHasPkg) filesToCommit.push('package.json')
   for (const d of changed) {
     filesToCommit.push(path.join(d.name, VERSION_FILE))
     if (hasPackageJson(path.join(root, d.name))) filesToCommit.push(path.join(d.name, 'package.json'))
@@ -168,7 +170,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
 
   if (dryRun) {
     const actions = [
-      `write root ${VERSION_FILE} → ${globalNext}`,
+      `write root ${VERSION_FILE}${rootHasPkg ? ' and package.json' : ''} → ${globalNext}`,
       ...changed.map((d) => {
         const withPkg = hasPackageJson(path.join(root, d.name)) ? ' and package.json' : ''
         return `write ${d.name}/${VERSION_FILE}${withPkg} → ${d.next}`
@@ -184,6 +186,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
   }
 
   writeVersionFile(root, globalNext)
+  if (rootHasPkg) updatePackageVersion(root, globalNext)
   for (const d of changed) {
     const dir = path.join(root, d.name)
     writeVersionFile(dir, d.next)
