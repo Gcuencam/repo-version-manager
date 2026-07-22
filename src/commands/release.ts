@@ -177,7 +177,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
       }),
     ]
     if (repo) {
-      actions.push(`git commit "chore(release): ${tag}" + annotated tag ${tag}`)
+      actions.push(`git commit "🔖 RVM release ${tag}" + annotated tag ${tag}`)
       actions.push('(rvm does not push: that is up to the developer)')
     }
     p.note(actions.join('\n'), 'Actions (not executed)')
@@ -196,7 +196,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
 
   if (repo) {
     try {
-      await commitFiles(root, filesToCommit, `chore(release): ${tag}`)
+      await commitFiles(root, filesToCommit, `🔖 RVM release ${tag}`)
       await createTag(root, tag, `Release ${tag}`)
       p.log.success(`Commit and tag ${tag} created.`)
     } catch (error) {

@@ -32,7 +32,7 @@ Generates a new version:
 2. Syncs with `origin`: on the development branch it rebases onto `origin/<develop>` and `origin/<main>` (main hotfixes get incorporated); on main it rebases onto `origin/<main>`.
 3. You pick the global bump: `patch`, `minor` or `major`. **From the main branch only `patch` is allowed** (hotfix).
 4. In monorepo mode, for each service you decide whether it bumps and how much: never above the global bump (if the global bump is `minor`, a service can be `minor`, `patch` or stay unchanged). In single-repo mode there is nothing else to decide.
-5. Shows a summary and, on confirmation: writes the `.version` files and the affected `package.json` files (the root one included, when present), creates the `chore(release): vX.Y.Z` commit and the annotated `vX.Y.Z` tag. It then prints the suggested push command (`git push --force-with-lease` on the development branch after the rebase; never force on main) — but does not run it.
+5. Shows a summary and, on confirmation: writes the `.version` files and the affected `package.json` files (the root one included, when present), creates the `🔖 RVM release vX.Y.Z` commit and the annotated `vX.Y.Z` tag. It then prints the suggested push command (`git push --force-with-lease` on the development branch after the rebase; never force on main) — but does not run it.
 
 With `--dry-run` it walks through the whole flow without touching files or git.
 
