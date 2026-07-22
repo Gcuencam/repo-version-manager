@@ -55,7 +55,7 @@ async function pickBranch(
 
 export async function initCommand(): Promise<void> {
   const root = process.cwd()
-  p.intro(pc.bgCyan(pc.black(' rvm init ')))
+  p.intro(pc.bgCyan(pc.black(' rpvm init ')))
 
   if (readConfig(root)) {
     const overwrite = must(
@@ -173,7 +173,7 @@ export async function initCommand(): Promise<void> {
       if (hasPackageJson(path.join(root, name))) filesToCommit.push(path.join(name, 'package.json'))
     }
     try {
-      await commitFiles(root, filesToCommit, `🔖 RVM init ${tag}`)
+      await commitFiles(root, filesToCommit, `🔖 RPVM init ${tag}`)
       p.log.success('Configuration files committed.')
     } catch (error) {
       p.log.warn(
@@ -199,5 +199,5 @@ export async function initCommand(): Promise<void> {
   }
 
   p.log.success(`Configuration saved to ${CONFIG_FILE}`)
-  p.outro(`${pc.green('Done.')} Generate your first version with ${pc.bold(pc.cyan('rvm release'))}`)
+  p.outro(`${pc.green('Done.')} Generate your first version with ${pc.bold(pc.cyan('rpvm release'))}`)
 }

@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-export const CONFIG_FILE = '.rvmrc.json'
+export const CONFIG_FILE = '.rpvmrc.json'
 export const VERSION_FILE = '.version'
 
 export interface RvmConfig {

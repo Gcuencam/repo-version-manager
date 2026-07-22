@@ -13,8 +13,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "rvm": "dist/cli.js",
-    "repov": "dist/cli.js"
+    "rpvm": "dist/cli.js"
   },
   "files": [
     "dist"

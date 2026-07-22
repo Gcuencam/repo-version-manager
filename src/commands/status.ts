@@ -12,7 +12,7 @@ import { currentBranch, isGitRepo } from '../core/git.js'
 import { fail } from '../ui.js'
 
 function versionDetail(fileVersion: string | null, pkgVersion: string | null): string {
-  if (!fileVersion) return pc.red('missing .version — run rvm init')
+  if (!fileVersion) return pc.red('missing .version — run rpvm init')
   if (pkgVersion && pkgVersion !== fileVersion) {
     return `${pc.green(`v${fileVersion}`)}  ${pc.yellow(`⚠ package.json out of sync (v${pkgVersion})`)}`
   }
@@ -22,10 +22,10 @@ function versionDetail(fileVersion: string | null, pkgVersion: string | null): s
 
 export async function statusCommand(): Promise<void> {
   const root = process.cwd()
-  p.intro(pc.bgBlue(pc.black(' rvm status ')))
+  p.intro(pc.bgBlue(pc.black(' rpvm status ')))
 
   const config = readConfig(root)
-  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('rvm init')} first.`)
+  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('rpvm init')} first.`)
 
   const nameWidth = Math.max(6, ...config.services.map((s) => s.length))
   const lines: string[] = []

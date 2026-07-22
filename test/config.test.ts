@@ -14,7 +14,7 @@ import {
 let dir: string
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rvm-test-'))
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rpvm-test-'))
 })
 
 afterEach(() => {
@@ -26,7 +26,7 @@ describe('config', () => {
     expect(readConfig(dir)).toBeNull()
   })
 
-  it('writes and reads a monorepo config back to .rvmrc.json', () => {
+  it('writes and reads a monorepo config back to .rpvmrc.json', () => {
     const config = {
       monorepo: true,
       mainBranch: 'main',
@@ -34,7 +34,7 @@ describe('config', () => {
       services: ['api', 'web'],
     }
     writeConfig(dir, config)
-    expect(fs.existsSync(path.join(dir, '.rvmrc.json'))).toBe(true)
+    expect(fs.existsSync(path.join(dir, '.rpvmrc.json'))).toBe(true)
     expect(readConfig(dir)).toEqual(config)
   })
 
