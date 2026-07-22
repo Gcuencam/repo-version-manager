@@ -8,6 +8,8 @@
 
 Interactive CLI to version a repository — or every service inside a monorepo — from your terminal, with git integration (branches, tags, rebase). You stay in control: **`rpvm` never pushes**.
 
+![rpvm release demo](https://raw.githubusercontent.com/Gcuencam/repo-version-manager/main/demo/demo.gif)
+
 ## Why rpvm?
 
 Tools like `semantic-release` or `changesets` automate versioning from commit conventions and CI pipelines. `rpvm` takes the opposite approach: a short interactive session where **you** decide every bump, review a summary of exactly what will happen, and nothing leaves your machine until you push it yourself.
@@ -46,22 +48,9 @@ It then writes the config and version files (see [Generated files](#generated-fi
 
 ### `rpvm release` — cut a new version
 
-The everyday command. It checks that the working tree is clean and that you are on the main or the development branch, rebases onto `origin`, and then walks you through the bumps:
+The everyday command — the one recorded in the demo above. It checks that the working tree is clean and that you are on the main or the development branch, rebases onto `origin`, and then walks you through the bumps: first the global one, then (in monorepo mode) one per service. It ends with a summary like this, and nothing is written until you confirm it:
 
 ```
-┌   rpvm release
-│
-◇  Branch up to date with origin.
-│
-◇  Global release type (current version: 1.2.3)
-│  minor (1.2.3 → 1.3.0)
-│
-◇  Bump api? (current: 0.9.1)
-│  minor (0.9.1 → 0.10.0)
-│
-◇  Bump web? (current: 2.1.0)
-│  no bump (stays at 2.1.0)
-│
 ◇  Release v1.3.0 summary ────╮
 │                             │
 │  global  1.2.3 → 1.3.0      │
@@ -69,24 +58,9 @@ The everyday command. It checks that the working tree is clean and that you are 
 │  web     2.1.0 (unchanged)  │
 │                             │
 ├─────────────────────────────╯
-│
-◇  Generate release v1.3.0?
-│  Yes
-│
-◇  Version files updated.
-│
-◇  Commit and tag v1.3.0 created.
-│
-◇  Next step ──────────────────────────────────────────────────╮
-│                                                              │
-│  rpvm does not push. When you want to publish the release:   │
-│    git push --force-with-lease origin develop                │
-│    git push origin v1.3.0                                    │
-│                                                              │
-├──────────────────────────────────────────────────────────────╯
 ```
 
-Nothing is written until you confirm the summary. Add `--dry-run` to walk the whole flow and see the list of actions without modifying anything.
+On confirmation it writes the version files, creates the release commit and the annotated tag, and prints the exact push command for when you're ready. Add `--dry-run` to walk the whole flow and see the list of actions without modifying anything.
 
 ### `rpvm status` — where am I?
 
@@ -163,6 +137,12 @@ npm run typecheck
 npm test
 npm run build
 npm link           # try `rpvm` locally
+```
+
+To regenerate the README demo GIF (requires [vhs](https://github.com/charmbracelet/vhs)):
+
+```sh
+bash demo/setup.sh && vhs demo/demo.tape
 ```
 
 Found a bug or have an idea? [Open an issue](https://github.com/Gcuencam/repo-version-manager/issues).
