@@ -11,23 +11,23 @@ const program = new Command()
 
 program
   .name('mvm')
-  .description('Monorepo Version Manager: gestiona la versión global del monorepo y la de cada servicio')
+  .description('Monorepo Version Manager: manage the global version of the monorepo and the version of each service')
   .version(pkg.version)
 
 program
   .command('init')
-  .description('configura el monorepo de forma interactiva (servicios, versiones y ramas)')
+  .description('interactively set up the monorepo (services, versions and branches)')
   .action(initCommand)
 
 program
   .command('release')
-  .description('genera una nueva versión (global y por servicio) con commit y tag; el push queda en tus manos')
-  .option('--dry-run', 'muestra lo que haría sin modificar archivos ni tocar git')
+  .description('generate a new version (global and per service) with commit and tag; pushing is up to you')
+  .option('--dry-run', 'show what would be done without modifying files or touching git')
   .action(releaseCommand)
 
 program
   .command('status')
-  .description('muestra las versiones actuales y el estado de sincronización')
+  .description('show current versions and sync status')
   .action(statusCommand)
 
 await program.parseAsync()

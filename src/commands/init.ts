@@ -21,7 +21,7 @@ const validateSemver = (value: string): string | undefined =>
   isValidVersion(value.trim()) ? undefined : semverHint
 
 const validateNotEmpty = (value: string): string | undefined =>
-  value.trim() ? undefined : 'No puede estar vacío'
+  value.trim() ? undefined : 'Cannot be empty'
 
 async function pickBranch(
   message: string,
@@ -44,12 +44,12 @@ async function pickBranch(
       initialValue: guess,
       options: [
         ...candidates.map((branch) => ({ value: branch, label: branch })),
-        { value: OTHER, label: 'Otra…', hint: 'escribir el nombre de la rama' },
+        { value: OTHER, label: 'Other…', hint: 'type a branch name' },
       ],
     })
   )
   if (choice !== OTHER) return choice
-  return must(await p.text({ message: 'Nombre de la rama', validate: validateNotEmpty })).trim()
+  return must(await p.text({ message: 'Branch name', validate: validateNotEmpty })).trim()
 }
 
 export async function initCommand(): Promise<void> {
@@ -59,30 +59,30 @@ export async function initCommand(): Promise<void> {
   if (readConfig(root)) {
     const overwrite = must(
       await p.confirm({
-        message: `Ya existe ${CONFIG_FILE} en este directorio. ¿Sobrescribir la configuración?`,
+        message: `${CONFIG_FILE} already exists in this directory. Overwrite the configuration?`,
         initialValue: false,
       })
     )
     if (!overwrite) {
-      p.cancel('Se conserva la configuración existente.')
+      p.cancel('Existing configuration kept.')
       return
     }
   }
 
   const candidates = listCandidateDirs(root)
   if (candidates.length === 0) {
-    fail('No hay carpetas de primer nivel en este directorio: no hay servicios que configurar.')
+    fail('There are no first-level folders in this directory: no services to configure.')
   }
 
   const services = must(
     await p.multiselect({
-      message: '¿Qué carpetas son servicios del monorepo? (espacio para marcar, enter para confirmar)',
+      message: 'Which folders are services of the monorepo? (space to select, enter to confirm)',
       options: candidates.map((c) => ({
         value: c.name,
         label: c.name,
         hint: c.hasPackageJson
-          ? `package.json · ${c.version ? `v${c.version}` : 'sin versión'}`
-          : 'sin package.json',
+          ? `package.json · ${c.version ? `v${c.version}` : 'no version'}`
+          : 'no package.json',
       })),
       initialValues: candidates.filter((c) => c.hasPackageJson).map((c) => c.name),
       required: true,
@@ -95,7 +95,7 @@ export async function initCommand(): Promise<void> {
     const current = readVersionFile(dir) ?? readPackageVersion(dir)
     const version = must(
       await p.text({
-        message: `Versión de ${pc.cyan(name)}`,
+        message: `Version of ${pc.cyan(name)}`,
         initialValue: current ?? '0.1.0',
         validate: validateSemver,
       })
@@ -105,7 +105,7 @@ export async function initCommand(): Promise<void> {
 
   const globalVersion = must(
     await p.text({
-      message: 'Versión global del monorepo',
+      message: 'Global monorepo version',
       initialValue: readVersionFile(root) ?? '0.1.0',
       validate: validateSemver,
     })
@@ -116,16 +116,16 @@ export async function initCommand(): Promise<void> {
   const repo = await isGitRepo(root)
   if (repo) {
     const branches = await localBranches(root)
-    mainBranch = await pickBranch('Rama principal', branches, ['main', 'master'])
+    mainBranch = await pickBranch('Main branch', branches, ['main', 'master'])
     developBranch = await pickBranch(
-      'Rama de desarrollo',
+      'Development branch',
       branches,
       ['develop', 'development'],
       mainBranch
     )
   } else {
     p.log.warn(
-      'No se ha detectado repositorio git: se guardan las ramas por defecto (main/develop) y se omiten las tags.'
+      'No git repository detected: default branches (main/develop) are saved and tags are skipped.'
     )
   }
 
@@ -146,29 +146,29 @@ export async function initCommand(): Promise<void> {
     summaryTable([
       { name: 'global', from: globalVersion, to: globalVersion },
       ...[...serviceVersions].map(([name, version]) => ({ name, from: version, to: version })),
-    ]).replaceAll('(no sube)', ''),
-    'Versiones configuradas'
+    ]).replaceAll('(unchanged)', ''),
+    'Configured versions'
   )
 
   if (repo) {
     const tag = `v${globalVersion}`
     if (!(await tagExists(root, tag))) {
       const wantTag = must(
-        await p.confirm({ message: `¿Crear la tag inicial ${tag}?`, initialValue: true })
+        await p.confirm({ message: `Create the initial tag ${tag}?`, initialValue: true })
       )
       if (wantTag) {
         try {
-          await createTag(root, tag, `Versión inicial ${tag}`)
-          p.log.success(`Tag ${tag} creada.`)
+          await createTag(root, tag, `Initial version ${tag}`)
+          p.log.success(`Tag ${tag} created.`)
         } catch (error) {
           p.log.warn(
-            `No se pudo crear la tag ${tag}: ${error instanceof Error ? error.message : String(error)}`
+            `Could not create tag ${tag}: ${error instanceof Error ? error.message : String(error)}`
           )
         }
       }
     }
   }
 
-  p.log.success(`Configuración guardada en ${CONFIG_FILE}`)
-  p.outro(`${pc.green('Listo.')} Genera tu primera versión con ${pc.bold(pc.cyan('mvm release'))}`)
+  p.log.success(`Configuration saved to ${CONFIG_FILE}`)
+  p.outro(`${pc.green('Done.')} Generate your first version with ${pc.bold(pc.cyan('mvm release'))}`)
 }

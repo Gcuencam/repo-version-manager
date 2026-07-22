@@ -56,7 +56,7 @@ export async function rebaseOnto(cwd: string, ref: string): Promise<void> {
   } catch {
     await execa('git', ['rebase', '--abort'], { cwd, reject: false })
     throw new Error(
-      `El rebase sobre ${ref} tiene conflictos. Resuélvelos a mano (git rebase ${ref}) y vuelve a ejecutar mvm release.`
+      `The rebase onto ${ref} has conflicts. Resolve them manually (git rebase ${ref}) and run mvm release again.`
     )
   }
 }

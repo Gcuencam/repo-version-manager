@@ -13,7 +13,7 @@ export function allowedBumps(globalBump: Bump): Bump[] {
 
 export function applyBump(version: string, bump: Bump): string {
   const next = semver.inc(version, bump)
-  if (!next) throw new Error(`Versión semver inválida: "${version}"`)
+  if (!next) throw new Error(`Invalid semver version: "${version}"`)
   return next
 }
 

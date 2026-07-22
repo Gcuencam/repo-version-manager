@@ -16,14 +16,14 @@ export async function statusCommand(): Promise<void> {
   p.intro(pc.bgBlue(pc.black(' mvm status ')))
 
   const config = readConfig(root)
-  if (!config) fail(`No existe ${CONFIG_FILE}. Ejecuta primero ${pc.bold('mvm init')}.`)
+  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('mvm init')} first.`)
 
   const nameWidth = Math.max(6, ...config.services.map((s) => s.length))
   const lines: string[] = []
 
   const globalVersion = readVersionFile(root)
   lines.push(
-    `${pc.bold('global'.padEnd(nameWidth))}  ${globalVersion ? pc.green(`v${globalVersion}`) : pc.red('sin .version')}`
+    `${pc.bold('global'.padEnd(nameWidth))}  ${globalVersion ? pc.green(`v${globalVersion}`) : pc.red('missing .version')}`
   )
 
   for (const name of config.services) {
@@ -33,22 +33,22 @@ export async function statusCommand(): Promise<void> {
 
     let detail: string
     if (!fileVersion) {
-      detail = pc.red('sin .version — ejecuta mvm init')
+      detail = pc.red('missing .version — run mvm init')
     } else if (pkgVersion && pkgVersion !== fileVersion) {
-      detail = `${pc.green(`v${fileVersion}`)}  ${pc.yellow(`⚠ package.json desincronizado (v${pkgVersion})`)}`
+      detail = `${pc.green(`v${fileVersion}`)}  ${pc.yellow(`⚠ package.json out of sync (v${pkgVersion})`)}`
     } else if (pkgVersion) {
-      detail = `${pc.green(`v${fileVersion}`)}  ${pc.dim('✔ package.json en sync')}`
+      detail = `${pc.green(`v${fileVersion}`)}  ${pc.dim('✔ package.json in sync')}`
     } else {
-      detail = `${pc.green(`v${fileVersion}`)}  ${pc.dim('sin package.json')}`
+      detail = `${pc.green(`v${fileVersion}`)}  ${pc.dim('no package.json')}`
     }
     lines.push(`${pc.cyan(name.padEnd(nameWidth))}  ${detail}`)
   }
 
-  p.note(lines.join('\n'), 'Versiones')
+  p.note(lines.join('\n'), 'Versions')
 
-  let branchInfo = `principal: ${pc.bold(config.mainBranch)} · desarrollo: ${pc.bold(config.developBranch)}`
+  let branchInfo = `main: ${pc.bold(config.mainBranch)} · develop: ${pc.bold(config.developBranch)}`
   if (await isGitRepo(root)) {
-    branchInfo += ` · actual: ${pc.bold(await currentBranch(root))}`
+    branchInfo += ` · current: ${pc.bold(await currentBranch(root))}`
   }
   p.outro(branchInfo)
 }

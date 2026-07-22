@@ -38,7 +38,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
   p.intro(pc.bgMagenta(pc.black(dryRun ? ' mvm release (dry-run) ' : ' mvm release ')))
 
   const config = readConfig(root)
-  if (!config) fail(`No existe ${CONFIG_FILE}. Ejecuta primero ${pc.bold('mvm init')}.`)
+  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('mvm init')} first.`)
 
   const repo = await isGitRepo(root)
   let branch: string | null = null
@@ -49,19 +49,19 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     branch = await currentBranch(root)
     if (branch !== config.mainBranch && branch !== config.developBranch) {
       fail(
-        `Estás en la rama ${pc.bold(branch)}. Los releases solo se generan desde ` +
-          `${pc.bold(config.mainBranch)} (patch) o ${pc.bold(config.developBranch)}.`
+        `You are on branch ${pc.bold(branch)}. Releases can only be generated from ` +
+          `${pc.bold(config.mainBranch)} (patch) or ${pc.bold(config.developBranch)}.`
       )
     }
     onMain = branch === config.mainBranch
     if (!(await isWorkingTreeClean(root))) {
-      fail('El working tree no está limpio. Haz commit o stash de tus cambios antes de generar versión.')
+      fail('The working tree is not clean. Commit or stash your changes before generating a version.')
     }
     origin = await hasRemote(root)
 
     if (origin && !dryRun) {
       const spinner = p.spinner()
-      spinner.start('Sincronizando con origin (fetch + rebase)')
+      spinner.start('Syncing with origin (fetch + rebase)')
       try {
         await fetchOrigin(root)
         if (onMain) {
@@ -76,33 +76,33 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
             await rebaseOnto(root, `origin/${config.mainBranch}`)
           }
         }
-        spinner.stop('Rama actualizada con origin.')
+        spinner.stop('Branch up to date with origin.')
       } catch (error) {
-        spinner.stop('Error al sincronizar con origin.', 1)
+        spinner.stop('Failed to sync with origin.', 1)
         fail(error instanceof Error ? error.message : String(error))
       }
     } else if (!origin) {
-      p.log.warn('El repositorio no tiene remoto origin: se omite la sincronización.')
+      p.log.warn('The repository has no origin remote: sync is skipped.')
     }
   } else {
-    p.log.warn('No se ha detectado repositorio git: solo se actualizarán los archivos de versión.')
+    p.log.warn('No git repository detected: only the version files will be updated.')
   }
 
   const globalCurrent = readVersionFile(root)
   if (!globalCurrent) {
-    fail(`No existe ${VERSION_FILE} en la raíz. Ejecuta ${pc.bold('mvm init')}.`)
+    fail(`${VERSION_FILE} does not exist at the root. Run ${pc.bold('mvm init')}.`)
   }
 
   if (onMain) {
     p.log.info(
-      `Estás en ${pc.bold(config.mainBranch)}: solo se permiten releases ${pc.bold('patch')} (hotfix).`
+      `You are on ${pc.bold(config.mainBranch)}: only ${pc.bold('patch')} releases (hotfix) are allowed.`
     )
   }
 
   const globalChoices: Bump[] = onMain ? ['patch'] : [...BUMPS]
   const globalBump = must(
     await p.select({
-      message: `Tipo de release global (versión actual: ${globalCurrent})`,
+      message: `Global release type (current version: ${globalCurrent})`,
       options: globalChoices.map((bump) => ({
         value: bump as string,
         label: bump,
@@ -114,7 +114,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
   const tag = `v${globalNext}`
 
   if (repo && (await tagExists(root, tag))) {
-    fail(`La tag ${tag} ya existe en el repositorio.`)
+    fail(`Tag ${tag} already exists in the repository.`)
   }
 
   const serviceChoices = allowedBumps(globalBump)
@@ -123,13 +123,13 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     const dir = path.join(root, name)
     const current = readVersionFile(dir) ?? readPackageVersion(dir)
     if (!current) {
-      fail(`El servicio ${pc.bold(name)} no tiene ${VERSION_FILE}. Ejecuta ${pc.bold('mvm init')} de nuevo.`)
+      fail(`Service ${pc.bold(name)} has no ${VERSION_FILE}. Run ${pc.bold('mvm init')} again.`)
     }
     const bump = must(
       await p.select({
-        message: `¿Sube de versión ${pc.cyan(name)}? (actual: ${current})`,
+        message: `Bump ${pc.cyan(name)}? (current: ${current})`,
         options: [
-          { value: 'none', label: 'no sube', hint: `se queda en ${current}` },
+          { value: 'none', label: 'no bump', hint: `stays at ${current}` },
           ...serviceChoices.map((b) => ({
             value: b as string,
             label: b,
@@ -146,16 +146,16 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
       { name: 'global', from: globalCurrent, to: globalNext },
       ...decisions.map((d) => ({ name: d.name, from: d.current, to: d.next })),
     ]),
-    `Resumen del release ${tag}`
+    `Release ${tag} summary`
   )
 
   const confirmed = must(
     await p.confirm({
-      message: dryRun ? 'Dry run: ¿mostrar las acciones que se ejecutarían?' : `¿Generar el release ${tag}?`,
+      message: dryRun ? 'Dry run: show the actions that would be executed?' : `Generate release ${tag}?`,
     })
   )
   if (!confirmed) {
-    p.cancel('Release cancelado. No se ha modificado nada.')
+    p.cancel('Release cancelled. Nothing has been modified.')
     return
   }
 
@@ -168,18 +168,18 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
 
   if (dryRun) {
     const actions = [
-      `escribir ${VERSION_FILE} raíz → ${globalNext}`,
+      `write root ${VERSION_FILE} → ${globalNext}`,
       ...changed.map((d) => {
-        const withPkg = hasPackageJson(path.join(root, d.name)) ? ' y package.json' : ''
-        return `escribir ${d.name}/${VERSION_FILE}${withPkg} → ${d.next}`
+        const withPkg = hasPackageJson(path.join(root, d.name)) ? ' and package.json' : ''
+        return `write ${d.name}/${VERSION_FILE}${withPkg} → ${d.next}`
       }),
     ]
     if (repo) {
-      actions.push(`git commit "chore(release): ${tag}" + tag anotada ${tag}`)
-      actions.push('(mvm no hace push: queda en manos del desarrollador)')
+      actions.push(`git commit "chore(release): ${tag}" + annotated tag ${tag}`)
+      actions.push('(mvm does not push: that is up to the developer)')
     }
-    p.note(actions.join('\n'), 'Acciones (no ejecutadas)')
-    p.outro(pc.yellow('Dry run: no se ha modificado nada.'))
+    p.note(actions.join('\n'), 'Actions (not executed)')
+    p.outro(pc.yellow('Dry run: nothing has been modified.'))
     return
   }
 
@@ -189,25 +189,25 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     writeVersionFile(dir, d.next)
     if (hasPackageJson(dir)) updatePackageVersion(dir, d.next)
   }
-  p.log.success('Archivos de versión actualizados.')
+  p.log.success('Version files updated.')
 
   if (repo) {
     try {
       await commitFiles(root, filesToCommit, `chore(release): ${tag}`)
       await createTag(root, tag, `Release ${tag}`)
-      p.log.success(`Commit y tag ${tag} creados.`)
+      p.log.success(`Commit and tag ${tag} created.`)
     } catch (error) {
-      fail(`Error creando commit/tag: ${error instanceof Error ? error.message : String(error)}`)
+      fail(`Error creating commit/tag: ${error instanceof Error ? error.message : String(error)}`)
     }
 
     if (branch) {
       const pushHint = `git push ${onMain ? '' : '--force-with-lease '}origin ${branch} && git push origin ${tag}`
       p.note(
-        `mvm no hace push. Cuando quieras publicar el release:\n  ${pc.cyan(pushHint)}`,
-        'Siguiente paso'
+        `mvm does not push. When you want to publish the release:\n  ${pc.cyan(pushHint)}`,
+        'Next step'
       )
     }
   }
 
-  p.outro(pc.green(`Release ${pc.bold(tag)} completado ✔`))
+  p.outro(pc.green(`Release ${pc.bold(tag)} completed ✔`))
 }

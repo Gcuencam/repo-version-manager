@@ -4,7 +4,7 @@ import pc from 'picocolors'
 /** Unwraps a clack prompt result; if the user cancels (Ctrl+C), exits cleanly. */
 export function must<T>(value: T | symbol): T {
   if (p.isCancel(value)) {
-    p.cancel('Operación cancelada.')
+    p.cancel('Operation cancelled.')
     process.exit(0)
   }
   return value as T
@@ -12,12 +12,12 @@ export function must<T>(value: T | symbol): T {
 
 export function fail(message: string): never {
   p.log.error(pc.red(message))
-  p.outro(pc.red('Abortado: no se ha modificado nada.'))
+  p.outro(pc.red('Aborted: nothing has been modified.'))
   process.exit(1)
 }
 
 export function versionArrow(from: string, to: string): string {
-  if (from === to) return `${pc.dim(from)} ${pc.dim('(no sube)')}`
+  if (from === to) return `${pc.dim(from)} ${pc.dim('(unchanged)')}`
   return `${pc.dim(from)} → ${pc.green(pc.bold(to))}`
 }
 
@@ -34,4 +34,4 @@ export function summaryTable(rows: SummaryRow[]): string {
     .join('\n')
 }
 
-export const semverHint = 'Versión semver inválida (ej. 1.2.3)'
+export const semverHint = 'Invalid semver version (e.g. 1.2.3)'
