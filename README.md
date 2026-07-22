@@ -62,3 +62,7 @@ npm test
 npm run build
 npm link   # to try `mvm` locally
 ```
+
+## License
+
+[MIT](LICENSE)
