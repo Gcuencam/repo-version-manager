@@ -10,8 +10,8 @@ const pkg = createRequire(import.meta.url)('../package.json') as { version: stri
 const program = new Command()
 
 program
-  .name('mvm')
-  .description('Monorepo Version Manager: manage the global version of the monorepo and the version of each service')
+  .name('rvm')
+  .description('Repo Version Manager: manage the global version of a repo or monorepo and the version of each service')
   .version(pkg.version)
 
 program

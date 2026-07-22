@@ -14,7 +14,7 @@ import {
 let dir: string
 
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mvm-test-'))
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rvm-test-'))
 })
 
 afterEach(() => {

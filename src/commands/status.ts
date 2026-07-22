@@ -13,10 +13,10 @@ import { fail } from '../ui.js'
 
 export async function statusCommand(): Promise<void> {
   const root = process.cwd()
-  p.intro(pc.bgBlue(pc.black(' mvm status ')))
+  p.intro(pc.bgBlue(pc.black(' rvm status ')))
 
   const config = readConfig(root)
-  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('mvm init')} first.`)
+  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('rvm init')} first.`)
 
   const nameWidth = Math.max(6, ...config.services.map((s) => s.length))
   const lines: string[] = []
@@ -33,7 +33,7 @@ export async function statusCommand(): Promise<void> {
 
     let detail: string
     if (!fileVersion) {
-      detail = pc.red('missing .version — run mvm init')
+      detail = pc.red('missing .version — run rvm init')
     } else if (pkgVersion && pkgVersion !== fileVersion) {
       detail = `${pc.green(`v${fileVersion}`)}  ${pc.yellow(`⚠ package.json out of sync (v${pkgVersion})`)}`
     } else if (pkgVersion) {

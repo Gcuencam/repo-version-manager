@@ -3,7 +3,7 @@ import * as p from '@clack/prompts'
 import pc from 'picocolors'
 import {
   CONFIG_FILE,
-  type MvmConfig,
+  type RvmConfig,
   hasPackageJson,
   readConfig,
   readPackageVersion,
@@ -54,7 +54,7 @@ async function pickBranch(
 
 export async function initCommand(): Promise<void> {
   const root = process.cwd()
-  p.intro(pc.bgCyan(pc.black(' mvm init ')))
+  p.intro(pc.bgCyan(pc.black(' rvm init ')))
 
   if (readConfig(root)) {
     const overwrite = must(
@@ -129,7 +129,7 @@ export async function initCommand(): Promise<void> {
     )
   }
 
-  const config: MvmConfig = {
+  const config: RvmConfig = {
     mainBranch,
     developBranch,
     services: [...services].sort((a, b) => a.localeCompare(b)),
@@ -170,5 +170,5 @@ export async function initCommand(): Promise<void> {
   }
 
   p.log.success(`Configuration saved to ${CONFIG_FILE}`)
-  p.outro(`${pc.green('Done.')} Generate your first version with ${pc.bold(pc.cyan('mvm release'))}`)
+  p.outro(`${pc.green('Done.')} Generate your first version with ${pc.bold(pc.cyan('rvm release'))}`)
 }

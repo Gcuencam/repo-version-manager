@@ -35,10 +35,10 @@ interface ServiceDecision {
 export async function releaseCommand(options: { dryRun?: boolean }): Promise<void> {
   const dryRun = options.dryRun ?? false
   const root = process.cwd()
-  p.intro(pc.bgMagenta(pc.black(dryRun ? ' mvm release (dry-run) ' : ' mvm release ')))
+  p.intro(pc.bgMagenta(pc.black(dryRun ? ' rvm release (dry-run) ' : ' rvm release ')))
 
   const config = readConfig(root)
-  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('mvm init')} first.`)
+  if (!config) fail(`${CONFIG_FILE} does not exist. Run ${pc.bold('rvm init')} first.`)
 
   const repo = await isGitRepo(root)
   let branch: string | null = null
@@ -90,7 +90,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
 
   const globalCurrent = readVersionFile(root)
   if (!globalCurrent) {
-    fail(`${VERSION_FILE} does not exist at the root. Run ${pc.bold('mvm init')}.`)
+    fail(`${VERSION_FILE} does not exist at the root. Run ${pc.bold('rvm init')}.`)
   }
 
   if (onMain) {
@@ -123,7 +123,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     const dir = path.join(root, name)
     const current = readVersionFile(dir) ?? readPackageVersion(dir)
     if (!current) {
-      fail(`Service ${pc.bold(name)} has no ${VERSION_FILE}. Run ${pc.bold('mvm init')} again.`)
+      fail(`Service ${pc.bold(name)} has no ${VERSION_FILE}. Run ${pc.bold('rvm init')} again.`)
     }
     const bump = must(
       await p.select({
@@ -176,7 +176,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     ]
     if (repo) {
       actions.push(`git commit "chore(release): ${tag}" + annotated tag ${tag}`)
-      actions.push('(mvm does not push: that is up to the developer)')
+      actions.push('(rvm does not push: that is up to the developer)')
     }
     p.note(actions.join('\n'), 'Actions (not executed)')
     p.outro(pc.yellow('Dry run: nothing has been modified.'))
@@ -203,7 +203,7 @@ export async function releaseCommand(options: { dryRun?: boolean }): Promise<voi
     if (branch) {
       const pushHint = `git push ${onMain ? '' : '--force-with-lease '}origin ${branch} && git push origin ${tag}`
       p.note(
-        `mvm does not push. When you want to publish the release:\n  ${pc.cyan(pushHint)}`,
+        `rvm does not push. When you want to publish the release:\n  ${pc.cyan(pushHint)}`,
         'Next step'
       )
     }

@@ -1,22 +1,22 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-export const CONFIG_FILE = '.mvmrc.json'
+export const CONFIG_FILE = '.rvmrc.json'
 export const VERSION_FILE = '.version'
 
-export interface MvmConfig {
+export interface RvmConfig {
   mainBranch: string
   developBranch: string
   services: string[]
 }
 
-export function readConfig(root: string): MvmConfig | null {
+export function readConfig(root: string): RvmConfig | null {
   const file = path.join(root, CONFIG_FILE)
   if (!fs.existsSync(file)) return null
-  return JSON.parse(fs.readFileSync(file, 'utf8')) as MvmConfig
+  return JSON.parse(fs.readFileSync(file, 'utf8')) as RvmConfig
 }
 
-export function writeConfig(root: string, config: MvmConfig): void {
+export function writeConfig(root: string, config: RvmConfig): void {
   fs.writeFileSync(path.join(root, CONFIG_FILE), JSON.stringify(config, null, 2) + '\n')
 }
 
