@@ -21,8 +21,9 @@ import {
   readNativeState,
 } from '../core/expo.js'
 import { commitFiles, createTag, isGitRepo, localBranches, tagExists } from '../core/git.js'
-import { listCandidateDirs } from '../core/services.js'
+import { type ServiceCandidate, listCandidateDirs } from '../core/services.js'
 import { isValidVersion } from '../core/versions.js'
+import { exploreMultiselect } from '../prompts/explore-multiselect.js'
 import { fail, must, semverHint, summaryTable } from '../ui.js'
 
 const validateSemver = (value: string): string | undefined =>
@@ -91,16 +92,32 @@ export async function initCommand(): Promise<void> {
     if (candidates.length === 0) {
       fail('There are no first-level folders in this directory: no services to configure.')
     }
+    const hintFor = (c: ServiceCandidate) =>
+      c.hasPackageJson
+        ? `package.json · ${c.version ? `v${c.version}` : 'no version'}`
+        : 'no package.json'
     services = must(
-      await p.multiselect({
-        message: 'Which folders are services of the monorepo? (space to select, enter to confirm)',
+      await exploreMultiselect({
+        message:
+          'Which folders are services of the monorepo? (space to select, e to explore subfolders, enter to confirm)',
         options: candidates.map((c) => ({
           value: c.name,
           label: c.name,
-          hint: c.hasPackageJson
-            ? `package.json · ${c.version ? `v${c.version}` : 'no version'}`
-            : 'no package.json',
+          hint: hintFor(c),
+          depth: 0 as const,
+          expandable: c.hasSubdirs,
+          expanded: false,
         })),
+        loadChildren: (parent) =>
+          listCandidateDirs(path.join(root, parent)).map((c) => ({
+            value: `${parent}/${c.name}`,
+            label: `${parent}/${c.name}`,
+            hint: hintFor(c),
+            depth: 1 as const,
+            parent,
+            expandable: false,
+            expanded: false,
+          })),
         initialValues: candidates.filter((c) => c.hasPackageJson).map((c) => c.name),
         required: true,
       })
